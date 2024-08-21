@@ -2,3 +2,7 @@
 /venv
 /cfg.py
 \cfg.py
+/.gitignore
+\.gitignore
+/__pycache__
+\__pycache__
