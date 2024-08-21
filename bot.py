@@ -3,6 +3,7 @@ from cfg import TOKEN
 from discord.ext import commands, tasks
 import aiohttp
 import io
+import random
 from googletrans import Translator
 
 # Set up intents and bot
@@ -18,10 +19,14 @@ translator = Translator()
 last_user = None
 last_channel = None
 
+# List of emojis to use for reactions
+reaction_emojis = ['👍', '👎', '😂', '😮', '😢', '😡', '❤️', '🎉']
+
 @bot.event
 async def on_ready():
     print(f'We have logged in as {bot.user}')
     send_avatar.start()
+    send_random_emoji.start()
 
 @bot.event
 async def on_message(message):
@@ -30,12 +35,16 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
-    # Update the last user and channel interacted with
     if message.mentions:
         # Update to the first mentioned user
         last_user = message.mentions[0]
         last_channel = message.channel
 
+        # React to the message with a random emoji once
+        if not any(reaction.emoji in reaction_emojis for reaction in message.reactions):
+            emoji = random.choice(reaction_emojis)
+            await message.add_reaction(emoji)
+    
     # Detect message language
     detected_lang = translator.detect(message.content).lang
 
@@ -69,5 +78,13 @@ async def send_avatar():
                     print(f'Failed to retrieve avatar. Status code: {response.status}')
     else:
         print('No user or channel available to send avatar.')
+
+@tasks.loop(seconds=5)
+async def send_random_emoji():
+    global last_channel
+
+    if last_channel:
+        emoji = random.choice(reaction_emojis)
+        await last_channel.send(f'Random emoji: {emoji}')
 
 bot.run(TOKEN)
